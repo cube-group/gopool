@@ -18,19 +18,25 @@ func newPoolGoItem(index int, f PoolFunc) *PoolGoItem {
 		id: index,
 		ch: make(chan PoolFunc, 1),
 	}
+	item.listen()
+	item.run(f)
+	return item
+}
+
+// listen chain to run
+func (t *PoolGoItem) listen() {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				poolDebug("Fatal", index, err)
+				poolDebug("Fatal", t.id, err)
+				t.listen()
 			}
 		}()
 		for {
-			f := <-item.ch
+			f := <-t.ch
 			f()
 		}
 	}()
-	item.run(f)
-	return item
 }
 
 func (t *PoolGoItem) IsRunning() bool {
